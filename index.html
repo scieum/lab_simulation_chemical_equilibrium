@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lab: Q-K Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            touch-action: pan-y;
+            background-color: #f8fafc;
+            color: #334155;
+            height: 100vh;
+            overflow: hidden;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .clean-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* === Custom Slider Styling === */
+        input[type=range] {
+            -webkit-appearance: none; 
+            width: 100%; 
+            background: transparent; 
+            height: 24px;
+            cursor: pointer;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 3px;
+            transition: background 0.2s;
+        }
+        input[type=range]:hover::-webkit-slider-runnable-track { background: #cbd5e1; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid #4f46e5;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            margin-top: -7px; 
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        input[type=range]:active::-webkit-slider-thumb {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.2);
+        }
+        input[type=range]:focus { outline: none; }
+
+        .select-radio:checked + div { background: #eff6ff; border-color: #6366f1; }
+        .select-radio:checked + div .label-text { color: #4338ca; font-weight: 800; }
+        
+        .pulse-btn { animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
+        }
+        
+        .arrow-display { transition: all 0.5s ease-out; }
+        .shift-left { transform: translateX(-20px); }
+        .shift-right { transform: translateX(20px); }
+        
+        .hidden-screen { display: none !important; }
+        .invisible-el { opacity: 0; pointer-events: none; }
+        .visible-el { opacity: 1; pointer-events: auto; transition: opacity 0.3s; }
+        
+        .btn-press { transition: transform 0.1s; }
+        .btn-press:active { transform: scale(0.97); }
+
+        /* Graph Toggle Animation */
+        .graph-wrapper {
+            transition: height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+            height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+        .graph-wrapper.show {
+            height: 180px; 
+            opacity: 1;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <div id="main-menu" class="h-screen flex flex-col items-center p-6 fade-in">
+        <div class="flex-1 flex flex-col items-center justify-center w-full max-w-5xl">
+            <div class="text-center mb-12">
+                <span class="text-xs font-bold text-indigo-600 uppercase tracking-[0.2em] mb-2 block">Virtual Science Lab</span>
+                <h1 class="text-3xl md:text-5xl font-extrabold text-slate-800 tracking-tight">Lab:Simulation</h1>
+                <p class="text-slate-500 mt-4 text-base md:text-lg">반응물과 생성물의 농도를 조작하여 반응의 진행방향을 예측해보세요.</p>
+            </div>
+            <button onclick="navigateTo('lab3')" class="btn-press px-8 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm tracking-wide shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 transition-all">
+                <span>실험 시작하기 →</span>
+            </button>
+        </div>
+        <footer class="w-full text-center text-slate-400 text-xs font-medium mt-12 mb-2">
+            © 2025 사이음(sci_eum). 과학의 사이, 사람을 잇다.
+        </footer>
+    </div>
+
+    <div id="lab3-container" class="hidden-screen h-screen flex flex-col items-center justify-between p-4 pb-0">
+        
+        <div class="w-full max-w-6xl mb-2 flex justify-start shrink-0">
+            <button onclick="navigateTo('home')" class="btn-press flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm text-slate-500 hover:text-slate-800 font-bold text-xs transition-colors border border-slate-200">← Home</button>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-4 w-full max-w-6xl items-stretch justify-center flex-1 overflow-hidden">
+            
+            <div class="relative w-full md:flex-[1.6] bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col p-4" id="sim-canvas-wrap">
+                
+                <div class="w-full flex justify-between items-start px-2 pt-1 mb-2 z-10 relative">
+                    <div>
+                        <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest block mb-0.5">Reaction Equation</span>
+                        <h2 id="reaction-display" class="text-xl font-extrabold text-slate-800">A &rightleftharpoons; B</h2>
+                    </div>
+                    
+                    <div class="flex items-center gap-3">
+                        <button id="toggleGraphBtn" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold transition-colors border border-slate-200">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                            화학 평형 그래프 보기
+                        </button>
+
+                        <div class="flex gap-3 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+                            <div class="text-center"><span class="text-[10px] font-bold text-slate-400 block">Q</span><div id="q-value" class="text-lg font-extrabold text-indigo-600">1.00</div></div>
+                            <div class="w-px bg-slate-200"></div>
+                            <div class="text-center"><span class="text-[10px] font-bold text-slate-400 block">K</span><div id="k-value" class="text-lg font-extrabold text-slate-800">1.5</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative flex-1 w-full min-h-[400px] bg-slate-50/30 rounded-xl border border-slate-100/50 mb-0 overflow-hidden flex items-center justify-center">
+                    <canvas id="simCanvas" class="absolute inset-0 w-full h-full"></canvas>
+                    
+                    <div class="absolute top-4 right-4 text-[11px] font-medium text-slate-400 text-right leading-relaxed z-10 pointer-events-none">
+                        반응 용기의 부피 = 100L<br>
+                        입자 1개당 1mol
+                    </div>
+
+                    <div id="reaction-direction-wrapper" class="absolute top-4 left-0 w-full flex justify-center invisible-el z-20">
+                        <div id="reaction-direction" class="arrow-display bg-white/95 backdrop-blur border border-slate-200 shadow-xl px-5 py-2.5 rounded-2xl flex flex-col items-center">
+                            <svg id="arrow-svg" class="w-8 h-8 mb-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="stroke-width: 3;"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                            <div id="direction-text" class="text-sm font-bold whitespace-nowrap text-slate-700">결과 예측 중...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="graphContainerWrapper" class="relative w-full">
+                    <div id="graphYLabel" class="absolute -top-6 left-0 text-[10px] font-bold text-slate-500 uppercase tracking-widest pointer-events-none opacity-0 transition-opacity duration-300 flex items-center gap-2">
+                        농도 (M)
+                        <div class="flex gap-2 ml-2">
+                            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>[A]</span>
+                            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>[B]</span>
+                        </div>
+                    </div>
+                    
+                    <div id="graphContainer" class="graph-wrapper bg-white rounded-xl border border-slate-200 relative">
+                        <div class="absolute bottom-1 right-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest pointer-events-none">
+                            반응의 진행 (시간)
+                        </div>
+                        <canvas id="graphCanvas" class="w-full h-full"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="w-full md:flex-1 md:max-w-[350px] flex flex-col gap-3">
+                
+                <div class="clean-panel p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <div>
+                            <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Lab: Q-K Simulation</span>
+                            <h1 class="text-lg font-extrabold text-slate-800">반응의 진행방향 예측</h1>
+                        </div>
+                        <div class="bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">
+                            <span class="text-xs font-bold text-indigo-700">K = 1.5</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-tight">Q와 K를 비교하여 반응의 진행 방향을 예측하고 평형에 도달하는 과정을 관찰하세요.</p>
+                </div>
+
+                <div class="clean-panel p-4">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">1. 반응식 선택</label>
+                    <div class="grid grid-cols-1 gap-2">
+                        <label class="cursor-pointer group relative">
+                            <input type="radio" name="reactionSelect" value="A_to_B" checked class="select-radio sr-only">
+                            <div class="p-2.5 rounded-lg border border-slate-200 hover:border-slate-300 flex items-center justify-center transition-colors">
+                                <span class="text-sm font-bold text-slate-600 label-text">A &rightleftharpoons; B</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer group relative">
+                            <input type="radio" name="reactionSelect" value="A_to_2B" class="select-radio sr-only">
+                            <div class="p-2.5 rounded-lg border border-slate-200 hover:border-slate-300 flex items-center justify-center transition-colors">
+                                <span class="text-sm font-bold text-slate-600 label-text">A &rightleftharpoons; 2B</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer group relative">
+                            <input type="radio" name="reactionSelect" value="2A_to_B" class="select-radio sr-only">
+                            <div class="p-2.5 rounded-lg border border-slate-200 hover:border-slate-300 flex items-center justify-center transition-colors">
+                                <span class="text-sm font-bold text-slate-600 label-text">2A &rightleftharpoons; B</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="clean-panel p-4 flex flex-col gap-4 grow">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">2. 초기 농도 (0.0 ~ 1.0M)</label>
+                        <p class="text-xs text-slate-400 mb-4">반응물과 생성물의 농도를 설정하고, 반응의 진행방향을 예측해보세요.</p>
+                    
+                        <div class="space-y-6">
+                            <div class="flex flex-col gap-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm font-bold text-red-600">반응물 [A]</span>
+                                    <span id="display-a" class="text-sm font-extrabold text-indigo-600 font-mono bg-indigo-50 px-2 py-0.5 rounded">0.5 M</span>
+                                </div>
+                                <input type="range" id="input-a" min="0.0" max="1.0" step="0.1" value="0.5">
+                            </div>
+
+                            <div class="flex flex-col gap-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm font-bold text-green-600">생성물 [B]</span>
+                                    <span id="display-b" class="text-sm font-extrabold text-indigo-600 font-mono bg-indigo-50 px-2 py-0.5 rounded">0.5 M</span>
+                                </div>
+                                <input type="range" id="input-b" min="0.0" max="1.0" step="0.1" value="0.5">
+                            </div>
+                        </div>
+
+                        <div class="mt-6 p-3 bg-slate-50 rounded-lg border border-slate-100 text-center">
+                            <div class="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">계산된 반응 지수 (Q)</div>
+                            <div id="q-math-display" class="text-sm font-medium text-slate-600 font-mono">
+                                Q = [B]/[A] = 0.5/0.5 = 1.00
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-auto space-y-2">
+                        <button id="startReactionBtn" class="btn-press w-full py-3.5 rounded-xl bg-indigo-600 text-white font-bold text-sm tracking-wide shadow-lg shadow-indigo-200 transition-all pulse-btn">
+                            반응의 진행방향 예측하기
+                        </button>
+                        <button id="resetSimBtn" class="btn-press w-full py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold border border-slate-200 transition-colors shadow-sm">
+                            초기화
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="w-full text-center text-slate-400 text-xs font-medium py-3 shrink-0">
+            © 2025 사이음(sci_eum). 과학의 사이, 사람을 잇다.
+        </footer>
+    </div>
+
+<script>
+    // ================= CONFIGURATION =================
+    const K_EQUILIBRIUM = 1.5; 
+    const CONC_UNIT = 100; // 1.0M = 100 particles
+    const PARTICLE_R = 4;
+    
+    // ================= STATE =================
+    let currentReaction = 'A_to_B';
+    let particles = [];
+    let isRunning = false;
+    let isRecording = false; 
+    let shiftDirection = 0; 
+    let graphData = []; 
+    let isGraphVisible = false;
+
+    // ================= DOM ELEMENTS =================
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    const graphCanvas = document.getElementById('graphCanvas');
+    const graphCtx = graphCanvas.getContext('2d');
+    const container = document.getElementById('sim-canvas-wrap');
+    
+    const inputA = document.getElementById('input-a');
+    const inputB = document.getElementById('input-b');
+    const displayA = document.getElementById('display-a');
+    const displayB = document.getElementById('display-b');
+    
+    const startBtn = document.getElementById('startReactionBtn');
+    const resetBtn = document.getElementById('resetSimBtn');
+    const toggleGraphBtn = document.getElementById('toggleGraphBtn');
+    const graphContainer = document.getElementById('graphContainer');
+    const graphYLabel = document.getElementById('graphYLabel');
+    const qMathDisplay = document.getElementById('q-math-display');
+    
+    const dirWrapper = document.getElementById('reaction-direction-wrapper');
+    const dirDiv = document.getElementById('reaction-direction');
+    const dirText = document.getElementById('direction-text');
+    const arrowSvg = document.getElementById('arrow-svg');
+    const qDisplay = document.getElementById('q-value');
+    const kDisplay = document.getElementById('k-value');
+
+    // ================= LOGIC =================
+    const REACTIONS = {
+        'A_to_B': { 
+            display: 'A &rightleftharpoons; B', 
+            calcQ: (A, B) => A < 0.001 ? Infinity : B / A,
+            formulaStr: (A, B) => `Q = [B]/[A] = ${B}/${A}`,
+            forward: { remove: {A:1}, add: {B:1} },
+            reverse: { remove: {B:1}, add: {A:1} }
+        },
+        'A_to_2B': { 
+            display: 'A &rightleftharpoons; 2B', 
+            calcQ: (A, B) => A < 0.001 ? Infinity : (B ** 2) / A,
+            formulaStr: (A, B) => `Q = [B]²/[A] = ${B}²/${A}`,
+            forward: { remove: {A:1}, add: {B:2} }, 
+            reverse: { remove: {B:2}, add: {A:1} }
+        },
+        '2A_to_B': { 
+            display: '2A &rightleftharpoons; B', 
+            calcQ: (A, B) => (A ** 2) < 0.0001 ? Infinity : B / (A ** 2),
+            formulaStr: (A, B) => `Q = [B]/[A]² = ${B}/${A}²`,
+            forward: { remove: {A:2}, add: {B:1} }, 
+            reverse: { remove: {B:1}, add: {A:2} }
+        }
+    };
+
+    function getQ(A, B) {
+        try { return REACTIONS[currentReaction].calcQ(A, B); } 
+        catch { return 0; }
+    }
+
+    function updateQText(a, b, q) {
+        const qVal = q === Infinity ? '∞' : q.toFixed(2);
+        const formula = REACTIONS[currentReaction].formulaStr(a.toFixed(1), b.toFixed(1));
+        qMathDisplay.innerHTML = `${formula} = <span class="text-indigo-600 font-bold">${qVal}</span>`;
+    }
+
+    // ================= UI HANDLERS =================
+    function handleConcChange() {
+        let a = parseFloat(inputA.value);
+        let b = parseFloat(inputB.value);
+        
+        displayA.textContent = a.toFixed(1) + " M";
+        displayB.textContent = b.toFixed(1) + " M";
+
+        const q = getQ(a, b);
+        qDisplay.textContent = q === Infinity ? '∞' : q.toFixed(2);
+        kDisplay.textContent = K_EQUILIBRIUM.toFixed(1);
+        updateQText(a, b, q);
+
+        isRunning = false;
+        isRecording = false; 
+        particles = []; 
+        graphData = []; 
+        initParticles(a, b); 
+        
+        dirWrapper.classList.remove('visible-el');
+        dirWrapper.classList.add('invisible-el');
+        
+        startBtn.disabled = false;
+        startBtn.classList.add('bg-indigo-600', 'text-white', 'pulse-btn');
+        startBtn.classList.remove('bg-slate-300', 'text-slate-500');
+        startBtn.textContent = '반응의 진행방향 예측하기';
+        
+        drawEmptyGraph(); 
+    }
+
+    inputA.addEventListener('input', handleConcChange);
+    inputB.addEventListener('input', handleConcChange);
+
+    function showPrediction() {
+        const a = parseFloat(inputA.value);
+        const b = parseFloat(inputB.value);
+        const q = getQ(a, b);
+
+        dirDiv.classList.remove('shift-left', 'shift-right', 'bg-green-50', 'bg-red-50', 'bg-blue-50', 'border-green-200', 'border-red-200', 'border-blue-200');
+        dirText.classList.remove('text-green-700', 'text-red-700', 'text-blue-700');
+        arrowSvg.style.transform = 'rotate(0deg)'; 
+
+        let isEq = false;
+        if (q < K_EQUILIBRIUM * 0.9) { 
+            shiftDirection = 1;
+            dirDiv.classList.add('shift-right', 'bg-green-50', 'border-green-200');
+            dirText.textContent = '정반응 진행 (Q < K)';
+            dirText.classList.add('text-green-700');
+            arrowSvg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>';
+            arrowSvg.style.color = '#15803d';
+        } else if (q > K_EQUILIBRIUM * 1.1) { 
+            shiftDirection = -1;
+            dirDiv.classList.add('shift-left', 'bg-red-50', 'border-red-200');
+            dirText.textContent = '역반응 진행 (Q > K)';
+            dirText.classList.add('text-red-700');
+            arrowSvg.style.transform = 'rotate(180deg)'; 
+            arrowSvg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>';
+            arrowSvg.style.color = '#b91c1c';
+        } else { 
+            isEq = true;
+            shiftDirection = 0;
+            dirDiv.classList.add('bg-blue-50', 'border-blue-200');
+            dirText.textContent = '평형 상태 (Q ≈ K)';
+            dirText.classList.add('text-blue-700');
+            arrowSvg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>';
+            arrowSvg.style.color = '#1d4ed8';
+        }
+
+        dirWrapper.classList.remove('invisible-el');
+        dirWrapper.classList.add('visible-el');
+
+        isRecording = true;
+        graphData = [{a: a, b: b}];
+
+        if (!isEq) {
+            isRunning = true;
+            startBtn.disabled = true;
+            startBtn.classList.remove('bg-indigo-600', 'pulse-btn');
+            startBtn.classList.add('bg-slate-300', 'text-slate-500');
+            startBtn.textContent = '반응 진행 중...';
+        } else {
+            startBtn.textContent = '평형 상태입니다';
+            startBtn.classList.remove('pulse-btn');
+            drawGraph(); 
+        }
+    }
+
+    function toggleGraph() {
+        isGraphVisible = !isGraphVisible;
+        if(isGraphVisible) {
+            graphContainer.classList.add('show');
+            toggleGraphBtn.classList.add('bg-slate-200', 'text-slate-800');
+            graphYLabel.classList.remove('opacity-0');
+            if(graphData.length > 0) drawGraph(); else drawEmptyGraph();
+        } else {
+            graphContainer.classList.remove('show');
+            toggleGraphBtn.classList.remove('bg-slate-200', 'text-slate-800');
+            graphYLabel.classList.add('opacity-0');
+        }
+    }
+
+    // ================= VISUALIZATION =================
+    const CUBE = { size: 240, x: 0, y: 0, depth: 50 };
+
+    function resize() {
+        const w = container.clientWidth - 32; 
+        const h = 400; // Increased height
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = w * dpr; canvas.height = h * dpr;
+        canvas.style.width = `${w}px`; canvas.style.height = `${h}px`;
+        
+        ctx.resetTransform(); ctx.scale(dpr, dpr);
+        // Center Cube & Move down
+        CUBE.x = w/2 - CUBE.size/2; 
+        CUBE.y = h/2 - CUBE.size/2 + 60; 
+        
+        const gw = graphContainer.clientWidth; 
+        const gh = 200;
+        graphCanvas.width = gw * dpr; graphCanvas.height = gh * dpr;
+        graphCtx.resetTransform(); graphCtx.scale(dpr, dpr);
+        
+        if(graphData.length > 0) drawGraph(); else drawEmptyGraph();
+    }
+    
+    let resizeTimeout;
+    new ResizeObserver(() => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(resize, 50); 
+    }).observe(container);
+
+    class Particle {
+        constructor(type, x, y, z) {
+            this.type = type;
+            this.progress = 0; 
+            const range = CUBE.size - PARTICLE_R*2;
+            this.x = x ?? (Math.random() * range + PARTICLE_R);
+            this.y = y ?? (Math.random() * range + PARTICLE_R);
+            this.z = z ?? (Math.random() * range + PARTICLE_R);
+            this.vx = (Math.random()-0.5)*1.5; 
+            this.vy = (Math.random()-0.5)*1.5; 
+            this.vz = (Math.random()-0.5)*1.5;
+            this.isDying = false; 
+        }
+        update() {
+            if(this.x < PARTICLE_R || this.x > CUBE.size-PARTICLE_R) this.vx *= -1;
+            if(this.y < PARTICLE_R || this.y > CUBE.size-PARTICLE_R) this.vy *= -1;
+            if(this.z < PARTICLE_R || this.z > CUBE.size-PARTICLE_R) this.vz *= -1;
+            this.x += this.vx; this.y += this.vy; this.z += this.vz;
+        }
+        draw(cx, cy) {
+            const perspective = 1 + (this.z / CUBE.size) * 0.4;
+            const sx = cx + this.x; const sy = cy + this.y;
+
+            if (this.isDying) {
+                ctx.globalAlpha = 1.0 - this.progress; 
+                ctx.beginPath(); ctx.arc(sx, sy, PARTICLE_R * perspective * (1-this.progress), 0, Math.PI*2);
+            } else if (this.progress > 0 && !this.isDying) {
+                ctx.globalAlpha = this.progress;
+                ctx.beginPath(); ctx.arc(sx, sy, PARTICLE_R * perspective * this.progress, 0, Math.PI*2);
+            } else {
+                ctx.globalAlpha = 1;
+                ctx.beginPath(); ctx.arc(sx, sy, PARTICLE_R * perspective, 0, Math.PI*2);
+            }
+
+            ctx.fillStyle = this.type === 'A' ? '#dc2626' : '#16a34a'; 
+            ctx.fill(); ctx.globalAlpha = 1;
+        }
+    }
+
+    function initParticles(aConc, bConc) {
+        particles = [];
+        const nA = Math.round(aConc * CONC_UNIT);
+        const nB = Math.round(bConc * CONC_UNIT);
+        for(let i=0; i<nA; i++) particles.push(new Particle('A'));
+        for(let i=0; i<nB; i++) particles.push(new Particle('B'));
+    }
+
+    function drawCube() {
+        const {x, y, size: s, depth: d} = CUBE;
+        const strokeColor = '#475569'; 
+        const fillColor = 'rgba(241, 245, 249, 0.5)';
+        
+        ctx.lineWidth = 2; ctx.lineJoin = 'round';
+        
+        ctx.strokeStyle = '#94a3b8'; // Back lines
+        ctx.beginPath(); ctx.moveTo(x+d, y-d); ctx.lineTo(x+s+d, y-d); ctx.lineTo(x+s+d, y+s-d); ctx.lineTo(x+d, y+s-d); ctx.closePath(); ctx.stroke(); 
+        
+        ctx.strokeStyle = strokeColor; // Front & Connectors
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x+d, y-d); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x+s, y); ctx.lineTo(x+s+d, y-d); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x+s, y+s); ctx.lineTo(x+s+d, y+s-d); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x, y+s); ctx.lineTo(x+d, y+s-d); ctx.stroke();
+
+        ctx.fillStyle = fillColor;
+        ctx.strokeRect(x, y, s, s); ctx.fillRect(x, y, s, s);
+    }
+
+    // Graph Settings
+    const GRAPH_PAD_L = 35;
+    const GRAPH_PAD_B = 25;
+
+    function drawGrid(w, h) {
+        graphCtx.clearRect(0, 0, w, h);
+        graphCtx.strokeStyle = '#f1f5f9'; graphCtx.lineWidth = 1;
+        graphCtx.beginPath();
+        for(let i=0; i<=5; i++) {
+            const y = GRAPH_PAD_B + ((h - GRAPH_PAD_B*2)/5)*i; 
+            graphCtx.moveTo(GRAPH_PAD_L, h - y); graphCtx.lineTo(w, h - y);
+        }
+        graphCtx.stroke();
+
+        graphCtx.fillStyle = '#64748b'; graphCtx.font = 'bold 10px sans-serif'; graphCtx.textAlign = 'right';
+        for(let i=0; i<=5; i++) {
+            const val = (i * 0.2).toFixed(1);
+            const y = GRAPH_PAD_B + ((h - GRAPH_PAD_B*2)/5)*i;
+            graphCtx.fillText(val, GRAPH_PAD_L - 5, h - y + 3);
+        }
+        
+        graphCtx.strokeStyle = '#334155'; graphCtx.lineWidth = 1.5;
+        graphCtx.beginPath(); graphCtx.moveTo(GRAPH_PAD_L, 0); graphCtx.lineTo(GRAPH_PAD_L, h - GRAPH_PAD_B); graphCtx.lineTo(w, h - GRAPH_PAD_B); graphCtx.stroke();
+    }
+
+    function drawEmptyGraph() {
+        if(!isGraphVisible) return;
+        const w = graphCanvas.width / (window.devicePixelRatio||1);
+        const h = graphCanvas.height / (window.devicePixelRatio||1);
+        drawGrid(w, h);
+    }
+
+    function drawGraph() {
+        if(!isGraphVisible) return;
+        const w = graphCanvas.width / (window.devicePixelRatio||1);
+        const h = graphCanvas.height / (window.devicePixelRatio||1);
+        
+        drawGrid(w, h); 
+
+        if (graphData.length < 1) return;
+
+        const drawW = w - GRAPH_PAD_L;
+        const drawH = h - GRAPH_PAD_B*2;
+        const stepX = graphData.length > 1 ? drawW / (graphData.length - 1) : 0; 
+        
+        const getY = (val) => h - GRAPH_PAD_B - (val * drawH);
+
+        const drawLine = (key, color) => {
+            graphCtx.strokeStyle = color; graphCtx.lineWidth = 2.5; graphCtx.lineJoin = 'round'; graphCtx.lineCap = 'round';
+            graphCtx.beginPath();
+            graphData.forEach((d, i) => {
+                const x = GRAPH_PAD_L + i * stepX;
+                const y = getY(d[key]);
+                if(i===0) graphCtx.moveTo(x, y);
+                else {
+                    const prevX = GRAPH_PAD_L + (i-1) * stepX;
+                    const prevY = getY(graphData[i-1][key]);
+                    const cpX = (prevX + x) / 2;
+                    graphCtx.quadraticCurveTo(cpX, prevY, x, y); 
+                }
+            });
+            graphCtx.stroke();
+        };
+
+        drawLine('a', '#dc2626');
+        drawLine('b', '#16a34a');
+    }
+
+    function executeConversion() {
+        const rules = REACTIONS[currentReaction];
+        const action = shiftDirection === 1 ? rules.forward : rules.reverse;
+        
+        const aNeeded = action.remove.A || 0;
+        const bNeeded = action.remove.B || 0;
+        
+        const aCandidates = particles.filter(p => p.type === 'A' && !p.isDying && p.progress === 0);
+        const bCandidates = particles.filter(p => p.type === 'B' && !p.isDying && p.progress === 0);
+
+        if (aCandidates.length < aNeeded || bCandidates.length < bNeeded) {
+            isRunning = false; startBtn.textContent = '입자 부족 (반응 종료)'; return;
+        }
+
+        const aToRemove = aCandidates.slice(0, aNeeded);
+        const bToRemove = bCandidates.slice(0, bNeeded);
+        [...aToRemove, ...bToRemove].forEach(p => { p.isDying = true; p.progress = 0.05; });
+
+        const aAdd = action.add.A || 0;
+        const bAdd = action.add.B || 0;
+        
+        let sx, sy, sz;
+        const ref = aToRemove[0] || bToRemove[0];
+        if(ref) { sx=ref.x; sy=ref.y; sz=ref.z; } else { sx=CUBE.size/2; sy=CUBE.size/2; sz=CUBE.size/2; }
+        
+        for(let i=0; i<aAdd; i++) { let p = new Particle('A', sx, sy, sz); p.progress = 0.05; particles.push(p); }
+        for(let i=0; i<bAdd; i++) { let p = new Particle('B', sx, sy, sz); p.progress = 0.05; particles.push(p); }
+    }
+
+    function simLoop() {
+        ctx.clearRect(0,0, canvas.width, canvas.height);
+        drawCube();
+        
+        particles.sort((a,b) => a.z - b.z);
+        
+        let animCount = 0;
+        let aCount = 0, bCount = 0;
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i];
+            p.update();
+            p.draw(CUBE.x, CUBE.y);
+            
+            if (p.isDying) {
+                p.progress += 0.05; animCount++;
+                if(p.progress >= 1) particles.splice(i, 1); 
+            } else if (p.progress > 0 && p.progress < 1) {
+                p.progress += 0.05; if(p.progress > 1) p.progress = 0;
+                animCount++;
+            }
+            if (!p.isDying) { if(p.type === 'A') aCount++; else bCount++; }
+        }
+
+        if (isRecording) {
+            graphData.push({a: aCount/CONC_UNIT, b: bCount/CONC_UNIT});
+            drawGraph(); 
+        }
+
+        if(isRunning && animCount === 0) {
+            const curA = aCount / CONC_UNIT;
+            const curB = bCount / CONC_UNIT;
+            const curQ = getQ(curA, curB);
+            
+            let tolerance = 0.1; 
+            if(currentReaction !== 'A_to_B') tolerance = 0.3;
+
+            if (Math.abs(curQ - K_EQUILIBRIUM) < tolerance) {
+                isRunning = false;
+                startBtn.textContent = '평형 도달 완료';
+                dirText.textContent = '평형 도달 (Q ≈ K)';
+                dirDiv.className = 'arrow-display bg-blue-50 border-blue-200 shadow-lg px-5 py-2.5 rounded-2xl flex flex-col items-center';
+                arrowSvg.style.transform = 'rotate(0deg)';
+                arrowSvg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>';
+                arrowSvg.style.color = '#1d4ed8';
+            } else {
+                if ((shiftDirection === 1 && curQ >= K_EQUILIBRIUM) || (shiftDirection === -1 && curQ <= K_EQUILIBRIUM)) {
+                     isRunning = false; startBtn.textContent = '평형 도달 완료';
+                } else {
+                    executeConversion();
+                }
+            }
+        }
+        requestAnimationFrame(simLoop);
+    }
+
+    function navigateTo(id) {
+        document.getElementById('main-menu').classList.add('hidden-screen');
+        document.getElementById('lab3-container').classList.add('hidden-screen');
+        if(id === 'home') document.getElementById('main-menu').classList.remove('hidden-screen');
+        if(id === 'lab3') {
+            document.getElementById('lab3-container').classList.remove('hidden-screen');
+            resize();
+            handleConcChange(); 
+            simLoop();
+        }
+    }
+    
+    startBtn.onclick = showPrediction;
+    resetBtn.onclick = () => {
+        inputA.value = 0.5; inputB.value = 0.5;
+        handleConcChange();
+    };
+    toggleGraphBtn.onclick = toggleGraph;
+    document.querySelectorAll('input[name="reactionSelect"]').forEach(r => {
+        r.onchange = (e) => {
+            currentReaction = e.target.value;
+            document.getElementById('reaction-display').innerHTML = REACTIONS[currentReaction].display;
+            handleConcChange();
+        };
+    });
+
+    window.onload = () => navigateTo('home');
+
+</script>
+</body>
+</html>
