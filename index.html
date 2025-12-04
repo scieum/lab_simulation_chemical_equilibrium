@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Lab: Q-K Simulation</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
     <style>
         body {
@@ -13,14 +14,13 @@
             background-color: #f8fafc;
             color: #334155;
             height: 100vh;
-            overflow: hidden;
-            overflow-x: hidden;
+            overflow: hidden; /* Prevent scrolling */
             -webkit-tap-highlight-color: transparent;
         }
         .clean-panel {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            border-radius: 20px;
+            border-radius: 16px; /* Slightly smaller radius */
             border: 1px solid #e2e8f0;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
@@ -35,27 +35,27 @@
             -webkit-appearance: none; 
             width: 100%; 
             background: transparent; 
-            height: 24px;
+            height: 20px; /* Reduced height */
             cursor: pointer;
         }
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
-            height: 6px;
+            height: 4px; /* Thinner track */
             cursor: pointer;
             background: #e2e8f0;
-            border-radius: 3px;
+            border-radius: 2px;
             transition: background 0.2s;
         }
         input[type=range]:hover::-webkit-slider-runnable-track { background: #cbd5e1; }
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            height: 20px;
-            width: 20px;
+            height: 16px; /* Smaller thumb */
+            width: 16px;
             border-radius: 50%;
             background: #ffffff;
             border: 2px solid #4f46e5;
             box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-            margin-top: -7px; 
+            margin-top: -6px; 
             transition: transform 0.1s, box-shadow 0.1s;
         }
         input[type=range]:active::-webkit-slider-thumb {
@@ -92,170 +92,214 @@
             overflow: hidden;
         }
         .graph-wrapper.show {
-            height: 180px; 
+            height: 150px; /* Reduced graph height */
             opacity: 1;
-            margin-top: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Blob Animation */
+        .bg-blob {
+            position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.5;
+            animation: blob-float 8s infinite; mix-blend-mode: multiply; z-index: 0;
+        }
+        @keyframes blob-float {
+            0% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0px, 0px) scale(1); }
+        }
+        .delay-2000 { animation-delay: 2s; }
+        .delay-4000 { animation-delay: 4s; }
+        
+        .label-xs {
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+            display: block;
         }
     </style>
 </head>
 <body class="bg-slate-50">
 
-    <div id="main-menu" class="h-screen flex flex-col items-center p-6 fade-in">
-        <div class="flex-1 flex flex-col items-center justify-center w-full max-w-5xl">
-            <div class="text-center mb-12">
-                <span class="text-xs font-bold text-indigo-600 uppercase tracking-[0.2em] mb-2 block">Virtual Science Lab</span>
-                <h1 class="text-3xl md:text-5xl font-extrabold text-slate-800 tracking-tight">Lab:Simulation</h1>
-                <p class="text-slate-500 mt-4 text-base md:text-lg">반응물과 생성물의 농도를 조작하여 반응의 진행방향을 예측해보세요.</p>
-            </div>
-            <button onclick="navigateTo('lab3')" class="btn-press px-8 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm tracking-wide shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 transition-all">
-                <span>실험 시작하기 →</span>
+    <!-- Main Menu -->
+    <div id="main-menu" class="h-screen w-full flex flex-col items-center justify-center p-6 fade-in relative overflow-hidden bg-white">
+        <div class="bg-blob" style="top: 10%; left: 20%; width: 400px; height: 400px; background: #e0e7ff;"></div>
+        <div class="bg-blob delay-2000" style="bottom: 10%; right: 20%; width: 350px; height: 350px; background: #f3e8ff;"></div>
+        <div class="bg-blob delay-4000" style="top: 40%; left: 50%; width: 300px; height: 300px; background: #dbeafe; transform: translate(-50%, -50%);"></div>
+
+        <div class="text-center max-w-3xl z-10">
+            <span class="label-xs text-indigo-600 mb-2">Virtual Science Lab</span>
+            <h1 class="text-6xl font-black text-slate-800 tracking-tight mb-4 leading-tight">Lab:Simulation</h1>
+            <h2 class="text-5xl font-bold text-slate-600 mb-8 tracking-tight">평형 상수와 반응 지수</h2>
+            <p class="text-slate-500 text-lg mb-12 font-medium leading-relaxed">
+                반응물과 생성물의 농도를 조작하여<br>반응의 진행방향을 예측해보세요.
+            </p>
+            <button onclick="navigateTo('lab3')" class="btn-press px-10 py-4 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 text-lg group">
+                <span class="mr-3">실험 시작하기</span>
+                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
             </button>
         </div>
-        <footer class="w-full text-center text-slate-400 text-xs font-medium mt-12 mb-2">
-            © 2025 사이음(sci_eum). 과학의 사이, 사람을 잇다.
+        
+        <footer class="absolute bottom-8 w-full flex items-center justify-center gap-2 text-slate-400 text-xs font-medium">
+            <span>© 2025 사이음(sci_eum). 과학의 사이, 사람을 잇다.</span>
+            <a href="https://knuechem13.notion.site/ebd/2ba137a305b880fbac23d7b204098e51" target="_blank" class="hover:opacity-80 transition-opacity" title="오류 문의">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/e/e9/Notion-logo.svg" alt="Notion" class="w-4 h-4 opacity-50 hover:opacity-100 transition-opacity grayscale hover:grayscale-0">
+            </a>
         </footer>
     </div>
 
-    <div id="lab3-container" class="hidden-screen h-screen flex flex-col items-center justify-between p-4 pb-0">
+    <!-- Simulation Container -->
+    <!-- Reduced padding to allow more space -->
+    <div id="lab3-container" class="hidden-screen h-screen flex flex-col items-center justify-between p-2 pb-0">
         
-        <div class="w-full max-w-6xl mb-2 flex justify-start shrink-0">
-            <button onclick="navigateTo('home')" class="btn-press flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm text-slate-500 hover:text-slate-800 font-bold text-xs transition-colors border border-slate-200">← Home</button>
+        <!-- Header Row -->
+        <div class="w-full max-w-6xl mb-1 flex justify-start shrink-0">
+            <button onclick="navigateTo('home')" class="btn-press flex items-center gap-2 px-3 py-1.5 bg-white rounded-full shadow-sm text-slate-500 hover:text-slate-800 font-bold text-xs transition-colors border border-slate-200">← Home</button>
         </div>
 
-        <div class="flex flex-col md:flex-row gap-4 w-full max-w-6xl items-stretch justify-center flex-1 overflow-hidden">
+        <!-- Main Content Area -->
+        <!-- Reduced gap to fit vertical space -->
+        <div class="flex flex-col md:flex-row gap-2 w-full max-w-6xl items-stretch justify-center flex-1 overflow-hidden pb-2">
             
-            <div class="relative w-full md:flex-[1.6] bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col p-4" id="sim-canvas-wrap">
+            <!-- Left Panel: Canvas -->
+            <div class="relative w-full md:flex-[1.8] bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col p-3" id="sim-canvas-wrap">
                 
-                <div class="w-full flex justify-between items-start px-2 pt-1 mb-2 z-10 relative">
+                <!-- Top Info Bar -->
+                <div class="w-full flex justify-between items-start px-1 pt-0 mb-1 z-10 relative">
                     <div>
-                        <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest block mb-0.5">Reaction Equation</span>
-                        <h2 id="reaction-display" class="text-xl font-extrabold text-slate-800">A &rightleftharpoons; B</h2>
+                        <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest block mb-0">Reaction Equation</span>
+                        <h2 id="reaction-display" class="text-lg font-extrabold text-slate-800">A &rightleftharpoons; B</h2>
                     </div>
                     
-                    <div class="flex items-center gap-3">
-                        <button id="toggleGraphBtn" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold transition-colors border border-slate-200">
+                    <div class="flex items-center gap-2">
+                        <button id="toggleGraphBtn" class="flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-md text-[10px] font-bold transition-colors border border-slate-200">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
-                            화학 평형 그래프 보기
+                            그래프 보기
                         </button>
 
-                        <div class="flex gap-3 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
-                            <div class="text-center"><span class="text-[10px] font-bold text-slate-400 block">Q</span><div id="q-value" class="text-lg font-extrabold text-indigo-600">1.00</div></div>
+                        <div class="flex gap-2 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
+                            <div class="text-center"><span class="text-[9px] font-bold text-slate-400 block">Q</span><div id="q-value" class="text-sm font-extrabold text-indigo-600">1.00</div></div>
                             <div class="w-px bg-slate-200"></div>
-                            <div class="text-center"><span class="text-[10px] font-bold text-slate-400 block">K</span><div id="k-value" class="text-lg font-extrabold text-slate-800">1.5</div></div>
+                            <div class="text-center"><span class="text-[9px] font-bold text-slate-400 block">K</span><div id="k-value" class="text-sm font-extrabold text-slate-800">1.5</div></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="relative flex-1 w-full min-h-[400px] bg-slate-50/30 rounded-xl border border-slate-100/50 mb-0 overflow-hidden flex items-center justify-center">
+                <!-- Simulation Canvas Area -->
+                <!-- Reduced min-height to fit on smaller screens -->
+                <div class="relative flex-1 w-full min-h-[250px] bg-slate-50/30 rounded-xl border border-slate-100/50 mb-0 overflow-hidden flex items-center justify-center">
                     <canvas id="simCanvas" class="absolute inset-0 w-full h-full"></canvas>
                     
-                    <div class="absolute top-4 right-4 text-[11px] font-medium text-slate-400 text-right leading-relaxed z-10 pointer-events-none">
-                        반응 용기의 부피 = 100L<br>
-                        입자 1개당 1mol
+                    <div class="absolute top-2 right-2 text-[10px] font-medium text-slate-400 text-right leading-tight z-10 pointer-events-none">
+                        V = 100L<br>1개 = 1mol
                     </div>
 
-                    <div id="reaction-direction-wrapper" class="absolute top-4 left-0 w-full flex justify-center invisible-el z-20">
-                        <div id="reaction-direction" class="arrow-display bg-white/95 backdrop-blur border border-slate-200 shadow-xl px-5 py-2.5 rounded-2xl flex flex-col items-center">
-                            <svg id="arrow-svg" class="w-8 h-8 mb-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="stroke-width: 3;"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
-                            <div id="direction-text" class="text-sm font-bold whitespace-nowrap text-slate-700">결과 예측 중...</div>
+                    <div id="reaction-direction-wrapper" class="absolute top-2 left-0 w-full flex justify-center invisible-el z-20">
+                        <div id="reaction-direction" class="arrow-display bg-white/95 backdrop-blur border border-slate-200 shadow-xl px-4 py-2 rounded-xl flex flex-col items-center">
+                            <svg id="arrow-svg" class="w-6 h-6 mb-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="stroke-width: 3;"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                            <div id="direction-text" class="text-xs font-bold whitespace-nowrap text-slate-700">예측 중...</div>
                         </div>
                     </div>
                 </div>
 
+                <!-- Graph Area -->
                 <div id="graphContainerWrapper" class="relative w-full">
-                    <div id="graphYLabel" class="absolute -top-6 left-0 text-[10px] font-bold text-slate-500 uppercase tracking-widest pointer-events-none opacity-0 transition-opacity duration-300 flex items-center gap-2">
-                        농도 (M)
+                    <div id="graphYLabel" class="absolute -top-5 left-0 text-[9px] font-bold text-slate-500 uppercase tracking-widest pointer-events-none opacity-0 transition-opacity duration-300 flex items-center gap-2">
+                        농도(M)
                         <div class="flex gap-2 ml-2">
-                            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>[A]</span>
-                            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>[B]</span>
+                            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>A</span>
+                            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>B</span>
                         </div>
                     </div>
                     
                     <div id="graphContainer" class="graph-wrapper bg-white rounded-xl border border-slate-200 relative">
-                        <div class="absolute bottom-1 right-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest pointer-events-none">
-                            반응의 진행 (시간)
-                        </div>
                         <canvas id="graphCanvas" class="w-full h-full"></canvas>
                     </div>
                 </div>
 
             </div>
 
-            <div class="w-full md:flex-1 md:max-w-[350px] flex flex-col gap-3">
+            <!-- Right Panel: Controls -->
+            <div class="w-full md:flex-1 md:max-w-[320px] flex flex-col gap-2">
                 
-                <div class="clean-panel p-4">
-                    <div class="flex justify-between items-center mb-2">
+                <!-- Description Panel -->
+                <div class="clean-panel p-3">
+                    <div class="flex justify-between items-center mb-1">
                         <div>
-                            <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Lab: Q-K Simulation</span>
-                            <h1 class="text-lg font-extrabold text-slate-800">반응의 진행방향 예측</h1>
+                            <span class="text-[9px] font-bold text-indigo-600 uppercase tracking-widest">Lab: Q-K Simulation</span>
+                            <h1 class="text-base font-extrabold text-slate-800">반응의 진행방향 예측</h1>
                         </div>
-                        <div class="bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">
-                            <span class="text-xs font-bold text-indigo-700">K = 1.5</span>
+                        <div class="bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-100">
+                            <span class="text-[10px] font-bold text-indigo-700">K = 1.5</span>
                         </div>
                     </div>
-                    <p class="text-xs text-slate-500 leading-tight">Q와 K를 비교하여 반응의 진행 방향을 예측하고 평형에 도달하는 과정을 관찰하세요.</p>
+                    <p class="text-[10px] text-slate-500 leading-tight">Q와 K를 비교하여 반응 방향을 예측하세요.</p>
                 </div>
 
-                <div class="clean-panel p-4">
-                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">1. 반응식 선택</label>
-                    <div class="grid grid-cols-1 gap-2">
+                <!-- Reaction Selection -->
+                <div class="clean-panel p-3">
+                    <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">1. 반응식 선택</label>
+                    <div class="grid grid-cols-1 gap-1">
                         <label class="cursor-pointer group relative">
                             <input type="radio" name="reactionSelect" value="A_to_B" checked class="select-radio sr-only">
-                            <div class="p-2.5 rounded-lg border border-slate-200 hover:border-slate-300 flex items-center justify-center transition-colors">
-                                <span class="text-sm font-bold text-slate-600 label-text">A &rightleftharpoons; B</span>
+                            <div class="p-2 rounded-lg border border-slate-200 hover:border-slate-300 flex items-center justify-center transition-colors">
+                                <span class="text-xs font-bold text-slate-600 label-text">A &rightleftharpoons; B</span>
                             </div>
                         </label>
                         <label class="cursor-pointer group relative">
                             <input type="radio" name="reactionSelect" value="A_to_2B" class="select-radio sr-only">
-                            <div class="p-2.5 rounded-lg border border-slate-200 hover:border-slate-300 flex items-center justify-center transition-colors">
-                                <span class="text-sm font-bold text-slate-600 label-text">A &rightleftharpoons; 2B</span>
+                            <div class="p-2 rounded-lg border border-slate-200 hover:border-slate-300 flex items-center justify-center transition-colors">
+                                <span class="text-xs font-bold text-slate-600 label-text">A &rightleftharpoons; 2B</span>
                             </div>
                         </label>
                         <label class="cursor-pointer group relative">
                             <input type="radio" name="reactionSelect" value="2A_to_B" class="select-radio sr-only">
-                            <div class="p-2.5 rounded-lg border border-slate-200 hover:border-slate-300 flex items-center justify-center transition-colors">
-                                <span class="text-sm font-bold text-slate-600 label-text">2A &rightleftharpoons; B</span>
+                            <div class="p-2 rounded-lg border border-slate-200 hover:border-slate-300 flex items-center justify-center transition-colors">
+                                <span class="text-xs font-bold text-slate-600 label-text">2A &rightleftharpoons; B</span>
                             </div>
                         </label>
                     </div>
                 </div>
 
-                <div class="clean-panel p-4 flex flex-col gap-4 grow">
+                <!-- Sliders & Controls -->
+                <div class="clean-panel p-3 flex flex-col gap-2 grow">
                     <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">2. 초기 농도 (0.0 ~ 1.0M)</label>
-                        <p class="text-xs text-slate-400 mb-4">반응물과 생성물의 농도를 설정하고, 반응의 진행방향을 예측해보세요.</p>
-                    
-                        <div class="space-y-6">
-                            <div class="flex flex-col gap-2">
+                        <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">2. 초기 농도 (0.0 ~ 1.0M)</label>
+                        
+                        <div class="space-y-3">
+                            <div class="flex flex-col gap-1">
                                 <div class="flex justify-between items-center">
-                                    <span class="text-sm font-bold text-red-600">반응물 [A]</span>
-                                    <span id="display-a" class="text-sm font-extrabold text-indigo-600 font-mono bg-indigo-50 px-2 py-0.5 rounded">0.5 M</span>
+                                    <span class="text-xs font-bold text-red-600">반응물 [A]</span>
+                                    <span id="display-a" class="text-xs font-extrabold text-indigo-600 font-mono bg-indigo-50 px-1.5 py-0.5 rounded">0.5 M</span>
                                 </div>
                                 <input type="range" id="input-a" min="0.0" max="1.0" step="0.1" value="0.5">
                             </div>
 
-                            <div class="flex flex-col gap-2">
+                            <div class="flex flex-col gap-1">
                                 <div class="flex justify-between items-center">
-                                    <span class="text-sm font-bold text-green-600">생성물 [B]</span>
-                                    <span id="display-b" class="text-sm font-extrabold text-indigo-600 font-mono bg-indigo-50 px-2 py-0.5 rounded">0.5 M</span>
+                                    <span class="text-xs font-bold text-green-600">생성물 [B]</span>
+                                    <span id="display-b" class="text-xs font-extrabold text-indigo-600 font-mono bg-indigo-50 px-1.5 py-0.5 rounded">0.5 M</span>
                                 </div>
                                 <input type="range" id="input-b" min="0.0" max="1.0" step="0.1" value="0.5">
                             </div>
                         </div>
 
-                        <div class="mt-6 p-3 bg-slate-50 rounded-lg border border-slate-100 text-center">
-                            <div class="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">계산된 반응 지수 (Q)</div>
-                            <div id="q-math-display" class="text-sm font-medium text-slate-600 font-mono">
+                        <div class="mt-3 p-2 bg-slate-50 rounded-lg border border-slate-100 text-center">
+                            <div class="text-[9px] font-bold text-slate-400 mb-0.5 uppercase tracking-wider">계산된 반응 지수 (Q)</div>
+                            <div id="q-math-display" class="text-xs font-medium text-slate-600 font-mono">
                                 Q = [B]/[A] = 0.5/0.5 = 1.00
                             </div>
                         </div>
                     </div>
 
                     <div class="mt-auto space-y-2">
-                        <button id="startReactionBtn" class="btn-press w-full py-3.5 rounded-xl bg-indigo-600 text-white font-bold text-sm tracking-wide shadow-lg shadow-indigo-200 transition-all pulse-btn">
+                        <button id="startReactionBtn" class="btn-press w-full py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs tracking-wide shadow-lg shadow-indigo-200 transition-all pulse-btn">
                             반응의 진행방향 예측하기
                         </button>
-                        <button id="resetSimBtn" class="btn-press w-full py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold border border-slate-200 transition-colors shadow-sm">
+                        <button id="resetSimBtn" class="btn-press w-full py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold border border-slate-200 transition-colors shadow-sm">
                             초기화
                         </button>
                     </div>
@@ -263,8 +307,11 @@
             </div>
         </div>
 
-        <footer class="w-full text-center text-slate-400 text-xs font-medium py-3 shrink-0">
-            © 2025 사이음(sci_eum). 과학의 사이, 사람을 잇다.
+        <footer class="w-full flex items-center justify-center gap-2 text-slate-400 text-[10px] font-medium py-2 shrink-0">
+            <span>© 2025 사이음(sci_eum). 과학의 사이, 사람을 잇다.</span>
+            <a href="https://knuechem13.notion.site/ebd/2ba137a305b880fbac23d7b204098e51" target="_blank" class="hover:opacity-80 transition-opacity" title="오류 문의">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/e/e9/Notion-logo.svg" alt="Notion" class="w-3 h-3 opacity-60 hover:opacity-100 transition-opacity grayscale hover:grayscale-0">
+            </a>
         </footer>
     </div>
 
@@ -272,7 +319,7 @@
     // ================= CONFIGURATION =================
     const K_EQUILIBRIUM = 1.5; 
     const CONC_UNIT = 100; // 1.0M = 100 particles
-    const PARTICLE_R = 4;
+    const PARTICLE_R = 3; // Slightly smaller particles
     
     // ================= STATE =================
     let currentReaction = 'A_to_B';
@@ -447,22 +494,29 @@
     }
 
     // ================= VISUALIZATION =================
-    const CUBE = { size: 240, x: 0, y: 0, depth: 50 };
+    const CUBE = { size: 200, x: 0, y: 0, depth: 40 }; // Smaller Cube for smaller canvas
 
     function resize() {
-        const w = container.clientWidth - 32; 
-        const h = 400; // Increased height
+        const w = container.clientWidth - 24; // reduced padding
+        // Calculate available height: container height - header height - padding
+        const containerH = container.clientHeight;
+        const availableH = containerH - 60 - (isGraphVisible ? 160 : 0);
+        
+        const h = Math.max(250, availableH); // Minimum height
+
         const dpr = window.devicePixelRatio || 1;
         canvas.width = w * dpr; canvas.height = h * dpr;
         canvas.style.width = `${w}px`; canvas.style.height = `${h}px`;
         
         ctx.resetTransform(); ctx.scale(dpr, dpr);
-        // Center Cube & Move down
+        
+        // Center Cube & Move down slightly
+        CUBE.size = Math.min(220, Math.min(w, h) * 0.6); // Dynamic cube size
         CUBE.x = w/2 - CUBE.size/2; 
-        CUBE.y = h/2 - CUBE.size/2 + 60; 
+        CUBE.y = h/2 - CUBE.size/2 + 20; 
         
         const gw = graphContainer.clientWidth; 
-        const gh = 200;
+        const gh = 150;
         graphCanvas.width = gw * dpr; graphCanvas.height = gh * dpr;
         graphCtx.resetTransform(); graphCtx.scale(dpr, dpr);
         
@@ -483,9 +537,9 @@
             this.x = x ?? (Math.random() * range + PARTICLE_R);
             this.y = y ?? (Math.random() * range + PARTICLE_R);
             this.z = z ?? (Math.random() * range + PARTICLE_R);
-            this.vx = (Math.random()-0.5)*1.5; 
-            this.vy = (Math.random()-0.5)*1.5; 
-            this.vz = (Math.random()-0.5)*1.5;
+            this.vx = (Math.random()-0.5)*1.2; 
+            this.vy = (Math.random()-0.5)*1.2; 
+            this.vz = (Math.random()-0.5)*1.2;
             this.isDying = false; 
         }
         update() {
@@ -495,18 +549,32 @@
             this.x += this.vx; this.y += this.vy; this.z += this.vz;
         }
         draw(cx, cy) {
-            const perspective = 1 + (this.z / CUBE.size) * 0.4;
-            const sx = cx + this.x; const sy = cy + this.y;
+            // Apply Oblique Projection
+            // Map z (0 to CUBE.size) to depth offset
+            const zRatio = this.z / CUBE.size; 
+            
+            // Oblique projection offsets:
+            // x shifts right by depth * ratio
+            // y shifts up by depth * ratio
+            const xOff = zRatio * CUBE.depth;
+            const yOff = -zRatio * CUBE.depth;
+            
+            const sx = cx + this.x + xOff;
+            const sy = cy + this.y + yOff;
+
+            // Optional: Slight perspective scaling (Back is slightly smaller)
+            const scale = 1.0 - (zRatio * 0.15); 
+            const r = PARTICLE_R * scale;
 
             if (this.isDying) {
                 ctx.globalAlpha = 1.0 - this.progress; 
-                ctx.beginPath(); ctx.arc(sx, sy, PARTICLE_R * perspective * (1-this.progress), 0, Math.PI*2);
+                ctx.beginPath(); ctx.arc(sx, sy, r * (1-this.progress), 0, Math.PI*2);
             } else if (this.progress > 0 && !this.isDying) {
                 ctx.globalAlpha = this.progress;
-                ctx.beginPath(); ctx.arc(sx, sy, PARTICLE_R * perspective * this.progress, 0, Math.PI*2);
+                ctx.beginPath(); ctx.arc(sx, sy, r * this.progress, 0, Math.PI*2);
             } else {
                 ctx.globalAlpha = 1;
-                ctx.beginPath(); ctx.arc(sx, sy, PARTICLE_R * perspective, 0, Math.PI*2);
+                ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI*2);
             }
 
             ctx.fillStyle = this.type === 'A' ? '#dc2626' : '#16a34a'; 
@@ -522,29 +590,51 @@
         for(let i=0; i<nB; i++) particles.push(new Particle('B'));
     }
 
-    function drawCube() {
+    // Split drawCube into Back and Front for better 3D depth illusion
+    function drawCubeBack() {
+        const {x, y, size: s, depth: d} = CUBE;
+        const strokeColor = '#94a3b8'; 
+        
+        ctx.lineWidth = 1.5; ctx.lineJoin = 'round';
+        ctx.strokeStyle = strokeColor; 
+
+        // Back Face (offset by d, -d)
+        ctx.beginPath(); 
+        ctx.moveTo(x+d, y-d); 
+        ctx.lineTo(x+s+d, y-d); 
+        ctx.lineTo(x+s+d, y+s-d); 
+        ctx.lineTo(x+d, y+s-d); 
+        ctx.closePath(); 
+        ctx.stroke(); 
+    }
+
+    function drawCubeFront() {
         const {x, y, size: s, depth: d} = CUBE;
         const strokeColor = '#475569'; 
-        const fillColor = 'rgba(241, 245, 249, 0.5)';
+        const fillColor = 'rgba(241, 245, 249, 0.4)'; // Glassy effect
         
-        ctx.lineWidth = 2; ctx.lineJoin = 'round';
+        ctx.lineWidth = 1.5; ctx.lineJoin = 'round';
+        ctx.strokeStyle = strokeColor; 
         
-        ctx.strokeStyle = '#94a3b8'; // Back lines
-        ctx.beginPath(); ctx.moveTo(x+d, y-d); ctx.lineTo(x+s+d, y-d); ctx.lineTo(x+s+d, y+s-d); ctx.lineTo(x+d, y+s-d); ctx.closePath(); ctx.stroke(); 
-        
-        ctx.strokeStyle = strokeColor; // Front & Connectors
+        // Front Face
+        ctx.beginPath(); 
+        ctx.rect(x, y, s, s); 
+        ctx.stroke();
+
+        // Connectors (Edges connecting front to back)
         ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x+d, y-d); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(x+s, y); ctx.lineTo(x+s+d, y-d); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(x+s, y+s); ctx.lineTo(x+s+d, y+s-d); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(x, y+s); ctx.lineTo(x+d, y+s-d); ctx.stroke();
-
+        
+        // Fill Front Face (Draw last to provide "glass" effect over particles)
         ctx.fillStyle = fillColor;
-        ctx.strokeRect(x, y, s, s); ctx.fillRect(x, y, s, s);
+        ctx.fillRect(x, y, s, s);
     }
 
     // Graph Settings
-    const GRAPH_PAD_L = 35;
-    const GRAPH_PAD_B = 25;
+    const GRAPH_PAD_L = 25;
+    const GRAPH_PAD_B = 20;
 
     function drawGrid(w, h) {
         graphCtx.clearRect(0, 0, w, h);
@@ -556,11 +646,11 @@
         }
         graphCtx.stroke();
 
-        graphCtx.fillStyle = '#64748b'; graphCtx.font = 'bold 10px sans-serif'; graphCtx.textAlign = 'right';
+        graphCtx.fillStyle = '#64748b'; graphCtx.font = 'bold 9px sans-serif'; graphCtx.textAlign = 'right';
         for(let i=0; i<=5; i++) {
             const val = (i * 0.2).toFixed(1);
             const y = GRAPH_PAD_B + ((h - GRAPH_PAD_B*2)/5)*i;
-            graphCtx.fillText(val, GRAPH_PAD_L - 5, h - y + 3);
+            graphCtx.fillText(val, GRAPH_PAD_L - 3, h - y + 3);
         }
         
         graphCtx.strokeStyle = '#334155'; graphCtx.lineWidth = 1.5;
@@ -590,7 +680,7 @@
         const getY = (val) => h - GRAPH_PAD_B - (val * drawH);
 
         const drawLine = (key, color) => {
-            graphCtx.strokeStyle = color; graphCtx.lineWidth = 2.5; graphCtx.lineJoin = 'round'; graphCtx.lineCap = 'round';
+            graphCtx.strokeStyle = color; graphCtx.lineWidth = 2; graphCtx.lineJoin = 'round'; graphCtx.lineCap = 'round';
             graphCtx.beginPath();
             graphData.forEach((d, i) => {
                 const x = GRAPH_PAD_L + i * stepX;
@@ -641,9 +731,12 @@
 
     function simLoop() {
         ctx.clearRect(0,0, canvas.width, canvas.height);
-        drawCube();
         
-        particles.sort((a,b) => a.z - b.z);
+        drawCubeBack(); // 1. Draw Back Face (Background)
+        
+        // 2. Draw Particles (Sorted Back to Front)
+        // Sort descending: large Z (back) -> small Z (front)
+        particles.sort((a,b) => b.z - a.z);
         
         let animCount = 0;
         let aCount = 0, bCount = 0;
@@ -663,6 +756,8 @@
             if (!p.isDying) { if(p.type === 'A') aCount++; else bCount++; }
         }
 
+        drawCubeFront(); // 3. Draw Front Face & Fill (Foreground/Glass)
+
         if (isRecording) {
             graphData.push({a: aCount/CONC_UNIT, b: bCount/CONC_UNIT});
             drawGraph(); 
@@ -680,7 +775,7 @@
                 isRunning = false;
                 startBtn.textContent = '평형 도달 완료';
                 dirText.textContent = '평형 도달 (Q ≈ K)';
-                dirDiv.className = 'arrow-display bg-blue-50 border-blue-200 shadow-lg px-5 py-2.5 rounded-2xl flex flex-col items-center';
+                dirDiv.className = 'arrow-display bg-blue-50 border-blue-200 shadow-lg px-4 py-2 rounded-xl flex flex-col items-center';
                 arrowSvg.style.transform = 'rotate(0deg)';
                 arrowSvg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>';
                 arrowSvg.style.color = '#1d4ed8';
